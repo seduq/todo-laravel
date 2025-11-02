@@ -10,10 +10,6 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('/stella', function () {
-    return Inertia::render('Stella');
-})->name('stella');
-
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
