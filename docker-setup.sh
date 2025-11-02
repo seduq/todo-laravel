@@ -5,6 +5,14 @@
 
 echo "🐳 Setting up Docker environment..."
 
+# Set user/group IDs in .env if not already set
+if ! grep -q "USER_ID" .env 2>/dev/null; then
+    echo "👤 Setting up user mapping..."
+    echo -e "\n# Docker User Configuration" >> .env
+    echo "USER_ID=$(id -u)" >> .env
+    echo "GROUP_ID=$(id -g)" >> .env
+fi
+
 # Stop and remove existing containers
 echo "📦 Stopping existing containers..."
 docker compose down -v
@@ -31,16 +39,10 @@ docker compose up -d
 echo "⏳ Waiting for containers to be healthy..."
 sleep 10
 
-# Set permissions
+# Fix any remaining permission issues
 echo "🔐 Setting proper permissions..."
-docker compose exec app chmod -R 775 storage bootstrap/cache database
-docker compose exec app chown -R www-data:www-data storage bootstrap/cache database
-
-# Check if database file exists and set permissions
-if docker compose exec app test -f database/database.sqlite; then
-    docker compose exec app chmod 664 database/database.sqlite
-    docker compose exec app chown www-data:www-data database/database.sqlite
-fi
+sudo chown -R $(id -u):$(id -g) storage bootstrap/cache node_modules 2>/dev/null || \
+    chmod -R 777 storage bootstrap/cache 2>/dev/null || true
 
 # Install Composer dependencies
 echo "📚 Installing Composer dependencies..."
@@ -66,7 +68,7 @@ echo "✅ Setup complete! Container status:"
 docker compose ps
 
 echo ""
-echo "🌐 Application is available at: http://localhost:80"
+echo "🌐 Application is available at: http://localhost:8000"
 echo "📊 MySQL is available at: localhost:3306"
 echo "🔴 Redis is available at: localhost:6379"
 echo "⚡ Vite dev server at: http://localhost:5173"
